@@ -1,5 +1,5 @@
 import typer
-from project_s.pipeline import process_report
+from src.pipeline import process_report
 
 app = typer.Typer()
 

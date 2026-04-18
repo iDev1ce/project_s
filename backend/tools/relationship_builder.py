@@ -1,4 +1,4 @@
-from project_s.models.extractor import StixBundleInput, ExtractedRelationship
+from src.models.extractor import StixBundleInput, ExtractedRelationship
 
 DELIVERY_VERBS = (
     "spread",

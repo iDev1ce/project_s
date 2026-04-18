@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from project_s.agents.stix_agent import extractor_agent
-from project_s.agents.verifier_agent import verifier_agent
-from project_s.models.extractor import StixBundleInput
-from project_s.tools.relationship_builder import build_relationships_after_verification
-from project_s.tools.stix_exporter import export_verified_bundle_to_stix
+from src.agents.stix_agent import extractor_agent
+from src.agents.verifier_agent import verifier_agent
+from src.models.extractor import StixBundleInput
+from src.tools.relationship_builder import build_relationships_after_verification
+from src.tools.stix_exporter import export_verified_bundle_to_stix
 
 
 def process_report(input_path: str, output_name: str = "stix_bundle_final.json") -> str:

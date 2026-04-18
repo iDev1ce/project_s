@@ -5,8 +5,8 @@ import uuid
 from agno.tools import tool
 from stix2 import Bundle, Indicator, Malware, AttackPattern, ThreatActor, Campaign, Relationship
 
-from project_s.config import get_stix_output_dir
-from project_s.models.extractor import StixBundleInput
+from src.config import get_stix_output_dir
+from src.models.extractor import StixBundleInput
 
 
 @tool
