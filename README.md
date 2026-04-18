@@ -460,11 +460,6 @@ docker compose exec nginx cat /etc/nginx/conf.d/default.conf
 
 ## Recommended workflow
 
-### Development
-- start with HTTP
-- iterate on the pipeline and frontend
-- verify direct API behavior before adding TLS
-
 ### Production
 - use Docker Compose
 - terminate TLS with Nginx
