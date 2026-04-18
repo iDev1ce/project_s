@@ -36,7 +36,7 @@ The web app lets a user upload a report and download the generated STIX bundle.
 
 ## Requirements
 
-- Python 3.11+ or 3.12+
+- Python 3.13+
 - `uv`
 - Docker + Docker Compose
 - Nginx container
