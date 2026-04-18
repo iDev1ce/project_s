@@ -476,9 +476,3 @@ docker compose exec nginx cat /etc/nginx/conf.d/default.conf
 - ATT&CK enrichment
 - persistent job history
 - health checks and status endpoints
-
----
-
-## License
-
-Add your preferred license here.
