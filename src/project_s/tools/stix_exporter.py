@@ -309,7 +309,6 @@ def export_verified_bundle_to_stix(
 
     return str(file_path)
 
-
 @tool
 def export_verified_bundle_to_stix_tool(
     verified_bundle: StixBundleInput,
@@ -321,6 +320,5 @@ def export_verified_bundle_to_stix_tool(
         output_filename=output_filename,
         output_dir=output_dir,
     )
-
 
 __all__ = ["export_verified_bundle_to_stix", "export_verified_bundle_to_stix_tool"]

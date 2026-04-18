@@ -81,6 +81,5 @@ class StixBundleInput(BaseModel):
 
     report_title: Optional[str] = None
     description: Optional[str] = None
-    created_by: str = "m0r1"
 
     model_config = ConfigDict(extra="forbid")

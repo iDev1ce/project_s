@@ -12,14 +12,12 @@ from project_s.pipeline import process_report
 
 app = FastAPI(title="STIX Bundle Generator")
 
-
 def cleanup_file(path: str) -> None:
     try:
         if os.path.exists(path):
             os.remove(path)
     except Exception:
         pass
-
 
 @app.post("/api/convert")
 async def convert_file(
@@ -44,7 +42,7 @@ async def convert_file(
     background_tasks.add_task(cleanup_file, output_path)
 
     return FileResponse(
-        path=output_path,
-        filename="stix_bundle_final.json",
-        media_type="application/json",
+        path = output_path,
+        filename = "stix_bundle.json",
+        media_type = "application/json",
     )

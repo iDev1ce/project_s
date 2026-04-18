@@ -22,7 +22,7 @@ def process_report(input_path: str, output_name: str = "stix_bundle_final.json")
 Original document path: {input_path}
 
 Draft bundle:
-{draft_bundle.model_dump_json(indent=2)}
+{draft_bundle.model_dump_json(indent = 2)}
 
 Review this and return an improved StixBundleInput.
 Use load_document_tool if you need to double-check the source document.

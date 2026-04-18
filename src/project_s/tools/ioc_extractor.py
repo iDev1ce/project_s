@@ -3,7 +3,6 @@ from collections import defaultdict
 import re
 from typing import Iterable
 
-
 MD5_RE = re.compile(r"\b[a-fA-F0-9]{32}\b")
 SHA1_RE = re.compile(r"\b[a-fA-F0-9]{40}\b")
 SHA256_RE = re.compile(r"\b[a-fA-F0-9]{64}\b")
@@ -95,20 +94,21 @@ def _dedupe_preserve_order(values: Iterable[str]) -> list[str]:
     return out
 
 
-def _is_probably_filelike(domain: str) -> bool:
+def _is_probably_filelike(domain) -> bool:
     suffix = domain.rsplit(".", 1)[-1].lower()
+
     return suffix in FILELIKE_SUFFIXES
 
 
-def _extract_urls(text: str) -> list[str]:
+def _extract_urls(text) -> list[str]:
     return _dedupe_preserve_order(URL_RE.findall(text))
 
 
-def _extract_email_domains(text: str) -> list[str]:
+def _extract_email_domains(text) -> list[str]:
     return _dedupe_preserve_order(match.group(1).lower() for match in EMAIL_RE.finditer(text))
 
 
-def _extract_domains(text: str) -> list[str]:
+def _extract_domains(text) -> list[str]:
     domains = []
     for match in DOMAIN_RE.finditer(text):
         value = match.group(0).lower().strip(".;,)")
@@ -119,7 +119,7 @@ def _extract_domains(text: str) -> list[str]:
     return _dedupe_preserve_order(domains)
 
 
-def _snippet(text: str, start: int, end: int, window: int = 90) -> str:
+def _snippet(text, start, end, window = 90) -> str:
     left = max(0, start - window)
     right = min(len(text), end + window)
     snippet = text[left:right].replace("\n", " ")
@@ -128,7 +128,7 @@ def _snippet(text: str, start: int, end: int, window: int = 90) -> str:
     return snippet
 
 
-def _build_domain_candidates(text: str, domains: list[str]) -> list[dict]:
+def _build_domain_candidates(text, domains) -> list[dict]:
     text_lc = text.lower()
     candidates = []
 
