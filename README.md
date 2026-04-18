@@ -82,14 +82,13 @@ project_s/
     default.conf.template
 
   backend/
-    project_s/
-      app.py
-      pipeline.py
-      config.py
-      main.py
-      agents/
-      tools/
-      models/
+    app.py
+    pipeline.py
+    config.py
+    main.py
+    agents/
+    tools/
+    models/
 ```
 
 ---
@@ -140,13 +139,13 @@ uv sync
 Run the API locally:
 
 ```bash
-uv run uvicorn project_s.app:app --host 0.0.0.0 --port 8000
+uv run uvicorn backend.app:app --host 0.0.0.0 --port 8000
 ```
 
 Run the CLI:
 
 ```bash
-uv run python -m project_s.main convert /path/to/report.pdf --output-name stix_bundle_final.json
+uv run python -m backend.main convert /path/to/report.pdf --output-name stix_bundle_final.json
 ```
 
 ---

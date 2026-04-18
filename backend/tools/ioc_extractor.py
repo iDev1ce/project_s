@@ -3,6 +3,7 @@ from collections import defaultdict
 import re
 from typing import Iterable
 
+from backend.tools.document import load_document
 
 MD5_RE = re.compile(r"\b[a-fA-F0-9]{32}\b")
 SHA1_RE = re.compile(r"\b[a-fA-F0-9]{40}\b")
@@ -182,7 +183,6 @@ def _build_domain_candidates(text: str, domains: list[str]) -> list[dict]:
 
 @tool
 def extract_iocs_tool(file_path: str) -> dict:
-    from project_s.tools.document import load_document
 
     text = load_document(file_path)
     text_lc = text.lower()

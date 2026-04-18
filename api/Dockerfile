@@ -14,4 +14,4 @@ RUN uv sync --frozen --no-dev --no-editable
 
 ENV PYTHONPATH=/app/backend
 
-CMD ["/app/.venv/bin/uvicorn", "project_s.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/app/.venv/bin/uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "8000"]
