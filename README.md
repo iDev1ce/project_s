@@ -42,7 +42,6 @@ The web app lets a user upload a report and download the generated STIX bundle.
 - Nginx container
 - A valid OpenAI API key
 - A public IP address if you want Let's Encrypt IP certificates
-- Public inbound access to ports **80** and **443**
 
 ---
 
