@@ -8,10 +8,10 @@ COPY pyproject.toml uv.lock README.md /app/
 
 RUN uv sync --frozen --no-dev --no-editable --no-install-project
 
-COPY src /app/src
+COPY backend /app/backend
 
 RUN uv sync --frozen --no-dev --no-editable
 
-ENV PYTHONPATH=/app/src
+ENV PYTHONPATH=/app/backend
 
 CMD ["/app/.venv/bin/uvicorn", "project_s.app:app", "--host", "0.0.0.0", "--port", "8000"]

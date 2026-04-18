@@ -81,7 +81,7 @@ project_s/
   nginx/
     default.conf.template
 
-  src/
+  backend/
     project_s/
       app.py
       pipeline.py
@@ -287,11 +287,11 @@ services:
     expose:
       - "8000"
     environment:
-      PYTHONPATH: /app/src
+      PYTHONPATH: /app/backend
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       STIX_OUTPUT_DIR: ${STIX_OUTPUT_DIR}
     volumes:
-      - ./src:/app/src:z
+      - ./backend:/app/backend:z
 
   nginx:
     image: nginx:alpine

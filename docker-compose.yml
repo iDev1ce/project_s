@@ -8,10 +8,10 @@ services:
     expose:
       - "8000"
     environment:
-      PYTHONPATH: /app/src
+      PYTHONPATH: /app/backend
       OPENAI_API_KEY: ${OPENAI_API_KEY}
     volumes:
-      - ./src:/app/src:z
+      - ./backend:/app/backend:z
 
   nginx:
     image: nginx:alpine
