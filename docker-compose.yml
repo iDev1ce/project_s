@@ -1,0 +1,30 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: stix-api
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      PYTHONPATH: /app/src
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    volumes:
+      - ./src:/app/src:z
+
+  nginx:
+    image: nginx:alpine
+    container_name: stix-nginx
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SERVER_IP: ${SERVER_IP}
+    volumes:
+      - ./frontend:/srv:ro,z
+      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro,z
+      - /etc/letsencrypt:/etc/letsencrypt:ro,z

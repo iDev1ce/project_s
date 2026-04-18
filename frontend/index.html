@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STIX Bundle Generator</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121933;
+      --panel-2: #1a2345;
+      --text: #e8ecff;
+      --muted: #9fb0e0;
+      --accent: #6ea8fe;
+      --accent-2: #8b5cf6;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --border: rgba(255,255,255,0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, var(--bg), #090d18 60%, #070b14);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 860px;
+      background: rgba(18, 25, 51, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.35);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+
+    .hero {
+      padding: 28px 28px 18px;
+      background: radial-gradient(circle at top right, rgba(139,92,246,0.25), transparent 30%),
+                  radial-gradient(circle at top left, rgba(110,168,254,0.18), transparent 28%);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 2rem;
+      line-height: 1.1;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .content {
+      padding: 24px 28px 28px;
+      display: grid;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+    }
+
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.1rem;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .dropzone {
+      margin-top: 16px;
+      border: 1.5px dashed rgba(255,255,255,0.18);
+      border-radius: 18px;
+      padding: 28px;
+      text-align: center;
+      background: rgba(255,255,255,0.02);
+      transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+      cursor: pointer;
+    }
+
+    .dropzone.dragover {
+      border-color: var(--accent);
+      background: rgba(110,168,254,0.08);
+      transform: translateY(-1px);
+    }
+
+    .dropzone strong {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+
+    .dropzone span {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .hidden-input {
+      display: none;
+    }
+
+    .file-row {
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .file-meta {
+      min-width: 0;
+    }
+
+    .file-meta .name {
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-meta .size {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+    }
+
+    .secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .status {
+      padding: 14px 16px;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .status.info { color: var(--muted); }
+    .status.success { color: #d5ffe4; border-color: rgba(34,197,94,0.25); background: rgba(34,197,94,0.10); }
+    .status.error { color: #ffd8d8; border-color: rgba(239,68,68,0.25); background: rgba(239,68,68,0.10); }
+
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    .progress > div {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      animation: pulse 1.1s linear infinite;
+      transform-origin: left;
+    }
+
+    @keyframes pulse {
+      0% { transform: scaleX(0.2); opacity: 0.7; }
+      50% { transform: scaleX(0.75); opacity: 1; }
+      100% { transform: scaleX(1); opacity: 0.7; }
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: rgba(255,255,255,0.07);
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <h1>STIX Bundle Generator</h1>
+      <p>Upload a threat intelligence report, generate a STIX 2.1 bundle, then download the result.</p>
+    </section>
+
+    <section class="content">
+      <div class="card">
+        <h2>Upload report</h2>
+        <p>Supported formats depend on your backend pipeline. This page sends the selected file to an API endpoint and downloads the generated STIX bundle when processing finishes.</p>
+
+        <label class="dropzone" id="dropzone" for="fileInput">
+          <strong>Choose a file or drag it here</strong>
+          <span>PDF, DOCX, PPTX, XLSX, HTML, images, or any format your backend supports.</span>
+        </label>
+        <input class="hidden-input" id="fileInput" type="file" />
+
+        <div id="fileRow" class="file-row" hidden>
+          <div class="file-meta">
+            <div id="fileName" class="name"></div>
+            <div id="fileSize" class="size"></div>
+          </div>
+          <button id="clearBtn" class="secondary" type="button">Remove</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Generate bundle</h2>
+        <p>By default, this page expects a backend endpoint at <code>/api/convert</code> that accepts <code>multipart/form-data</code> with a single file field named <code>file</code> and returns the generated STIX bundle as a downloadable JSON file.</p>
+
+        <div class="button-row" style="margin-top:16px;">
+          <button id="generateBtn" class="primary" type="button" disabled>Generate STIX bundle</button>
+          <button id="downloadBtn" class="secondary" type="button" disabled>Download last result</button>
+        </div>
+
+        <div id="status" class="status info" style="margin-top:16px;">Select a file to begin.</div>
+        <div id="progressWrap" class="progress" hidden><div></div></div>
+      </div>
+
+      <div class="card small">
+        <strong>How your STIX bundle is generated</strong><br />
+        When you upload a report, the server will:<br />
+        1. Receive and prepare the document for processing<br />
+        2. Extract observables and threat intelligence entities from the content<br />
+        3. Review and refine the extracted data to improve quality and remove unsupported items<br />
+        4. Build relationships between the verified entities<br />
+        5. Export the final result as a STIX 2.1 bundle in JSON format<br />
+        6. Return the generated bundle for download
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const dropzone = document.getElementById('dropzone');
+    const fileRow = document.getElementById('fileRow');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const clearBtn = document.getElementById('clearBtn');
+    const generateBtn = document.getElementById('generateBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const statusEl = document.getElementById('status');
+    const progressWrap = document.getElementById('progressWrap');
+
+    let selectedFile = null;
+    let lastBlob = null;
+    let lastFilename = 'stix_bundle.json';
+
+    function formatBytes(bytes) {
+      if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+      const units = ['B', 'KB', 'MB', 'GB'];
+      const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+      const value = bytes / Math.pow(1024, index);
+      return `${value.toFixed(index === 0 ? 0 : 2)} ${units[index]}`;
+    }
+
+    function setStatus(message, kind = 'info') {
+      statusEl.textContent = message;
+      statusEl.className = `status ${kind}`;
+    }
+
+    function setBusy(isBusy) {
+      generateBtn.disabled = isBusy || !selectedFile;
+      clearBtn.disabled = isBusy;
+      fileInput.disabled = isBusy;
+      progressWrap.hidden = !isBusy;
+    }
+
+    function updateFile(file) {
+      selectedFile = file;
+      if (!file) {
+        fileRow.hidden = true;
+        fileName.textContent = '';
+        fileSize.textContent = '';
+        generateBtn.disabled = true;
+        setStatus('Select a file to begin.', 'info');
+        return;
+      }
+
+      fileRow.hidden = false;
+      fileName.textContent = file.name;
+      fileSize.textContent = formatBytes(file.size);
+      generateBtn.disabled = false;
+      setStatus('Ready to generate the STIX bundle.', 'info');
+    }
+
+    function triggerDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    fileInput.addEventListener('change', (event) => {
+      const [file] = event.target.files || [];
+      updateFile(file || null);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      fileInput.value = '';
+      updateFile(null);
+    });
+
+    ['dragenter', 'dragover'].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        dropzone.classList.remove('dragover');
+      });
+    });
+
+    dropzone.addEventListener('drop', (event) => {
+      const [file] = event.dataTransfer.files || [];
+      if (!file) return;
+
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      fileInput.files = transfer.files;
+      updateFile(file);
+    });
+
+    generateBtn.addEventListener('click', async () => {
+      if (!selectedFile) return;
+
+      setBusy(true);
+      setStatus('Uploading file and generating STIX bundle...', 'info');
+
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      try {
+        const response = await fetch('/api/convert', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || `Request failed with status ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const match = disposition.match(/filename\*?=(?:UTF-8''|\")?([^\";]+)/i);
+        lastFilename = match ? decodeURIComponent(match[1].replace(/\"/g, '').trim()) : 'stix_bundle_final.json';
+        lastBlob = blob;
+
+        setStatus('STIX bundle generated successfully.', 'success');
+        downloadBtn.disabled = false;
+        triggerDownload(blob, lastFilename);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        setStatus(`Generation failed: ${message}`, 'error');
+      } finally {
+        setBusy(false);
+      }
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      if (!lastBlob) return;
+      triggerDownload(lastBlob, lastFilename);
+    });
+  </script>
+</body>
+</html>
