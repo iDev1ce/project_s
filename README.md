@@ -1,4 +1,4 @@
-# STIX Bundle Generator
+# Reports to STIX Bundle Generator
 
 Turn cyber threat intelligence reports into **STIX 2.1 bundles** through a web UI, FastAPI backend, and Docker-based deployment.
 
