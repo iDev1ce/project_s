@@ -458,15 +458,6 @@ docker compose exec nginx cat /etc/nginx/conf.d/default.conf
 
 ---
 
-## Security notes
-
-- Do not commit `.env`
-- Keep the OpenAI API key out of version control
-- Expose only the ports you need
-- Add authentication, IP restrictions, or a VPN if the service should not be public
-
----
-
 ## Recommended workflow
 
 ### Development
