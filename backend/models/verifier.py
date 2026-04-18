@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Literal, Optional
 
-from src.models.extractor import ExtractedDomain, StixBundleInput
+from backend.models.extractor import ExtractedDomain, StixBundleInput
 
 ReviewAction = Literal["keep", "correct", "remove", "add", "flag"]
 ConfidenceLevel = Literal["high", "medium", "low"]

@@ -2,9 +2,9 @@ from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from agno.tools import tool
 
-from src.models.extractor import StixBundleInput
-from src.tools.document import load_document
-from src.tools.ioc_extractor import extract_iocs_tool
+from backend.models.extractor import StixBundleInput
+from backend.tools.document import load_document
+from backend.tools.ioc_extractor import extract_iocs_tool
 
 
 @tool

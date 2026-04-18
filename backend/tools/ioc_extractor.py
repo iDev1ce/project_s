@@ -20,7 +20,7 @@ FILELIKE_SUFFIXES = {
     "htm",
     "php",
     "asp",
-    "aspx", 
+    "aspx",
     "js",
     "css",
     "json",
@@ -182,7 +182,7 @@ def _build_domain_candidates(text: str, domains: list[str]) -> list[dict]:
 
 @tool
 def extract_iocs_tool(file_path: str) -> dict:
-    from src.tools.document import load_document
+    from project_s.tools.document import load_document
 
     text = load_document(file_path)
     text_lc = text.lower()

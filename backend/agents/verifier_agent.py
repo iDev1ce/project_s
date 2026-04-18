@@ -2,12 +2,12 @@ from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from agno.tools import tool
 
-from src.models.extractor import StixBundleInput
+from backend.models.extractor import StixBundleInput
 
 
 @tool
 def load_document_tool(file_path: str) -> str:
-    from src.tools.document import load_document
+    from backend.tools.document import load_document
     return load_document(file_path)
 
 

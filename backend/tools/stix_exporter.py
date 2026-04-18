@@ -13,8 +13,8 @@ from stix2 import (
     Relationship,
 )
 
-from src.config import get_stix_output_dir
-from src.models.extractor import StixBundleInput
+from backend.config import get_stix_output_dir
+from backend.models.extractor import StixBundleInput
 
 
 REPORT_CENTRIC_PREFIXES = (

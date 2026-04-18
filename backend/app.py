@@ -8,7 +8,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from starlette.concurrency import run_in_threadpool
 
-from src.pipeline import process_report
+from backend.pipeline import process_report
 
 app = FastAPI(title="STIX Bundle Generator")
 
