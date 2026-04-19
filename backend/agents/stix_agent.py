@@ -35,7 +35,7 @@ Output contract:
   - `file_hashes`
   - `ipv4s`
   - `domains`
-  - `malware`
+  - `malwares`
   - `attack_patterns`
   - `threat_actors`
   - `campaigns`
@@ -108,7 +108,7 @@ Field-by-field extraction rules:
   - `evidence`
   - `context`
 
-4. `malware`
+4. `malwares`
 - Extract all explicitly named malware, malware families, stealers, botnets, loaders, trojans, ransomware, and malicious software.
 - Malware aliases, monikers, or alternate names still count as malware-related entities when explicitly named.
 - Do not treat malware names as threat actors.
@@ -193,7 +193,7 @@ Before finalizing, silently do one pass for each field:
 - `file_hashes`
 - `ipv4s`
 - `domains`
-- `malware`
+- `malwares`
 - `attack_patterns`
 - `threat_actors`
 - `campaigns`

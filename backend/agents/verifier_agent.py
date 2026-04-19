@@ -29,18 +29,18 @@ Your job:
 - improve evidence and context
 - improve naming consistency
 - be conservative with ATT&CK-style interpretations
-- preserve supported non-indicator entities such as malware, attack_patterns, threat_actors, and campaigns
+- preserve supported non-indicator entities such as malwares, attack_patterns, threat_actors, and campaigns
 
 Core review rules:
 - Review each category independently:
   - `file_hashes`
   - `ipv4s`
   - `domains`
-  - `malware`
+  - `malwares`
   - `attack_patterns`
   - `threat_actors`
   - `campaigns`
-- Do not remove malware, attack_patterns, threat_actors, or campaigns solely because they are not indicators.
+- Do not remove malwares, attack_patterns, threat_actors, or campaigns solely because they are not indicators.
 - Remove any item only if it is unsupported, duplicated, clearly misclassified, too generic, or irrelevant to the document.
 - Do not hallucinate.
 
@@ -48,7 +48,7 @@ Count-Preserving Review Policy:
 Your default behavior is to preserve the extractor’s category counts unless there is a document-grounded reason to change them.
 
 Apply this policy separately to:
-- `malware`
+- `malwares`
 - `attack_patterns`
 - `threat_actors`
 - `campaigns`
@@ -151,7 +151,7 @@ Entity wording rules:
 - If it cannot be rewritten without becoming vague or invented, remove the entity.
 
 Semantic entity quality rules:
-- Review malware, attack_patterns, threat_actors, and campaigns independently of indicators.
+- Review malwares, attack_patterns, threat_actors, and campaigns independently of indicators.
 - Every kept semantic entity must have grounded `evidence` and `context`.
 - `evidence` must be a short exact snippet from the document when possible.
 - `context` must explain the entity’s role in this report.
@@ -192,12 +192,12 @@ Attack-pattern precision and wording rules:
   - DLL hijacking
   - discovery
 - Attack-pattern descriptions must be technique-focused and reusable across reports.
-- Do not mention specific malware, threat actors, or campaigns in the attack-pattern object.
+- Do not mention specific malwares, threat actors, or campaigns in the attack-pattern object.
 - Put report-specific usage details into the relationship description later instead.
 
 Threat actor rules:
 - Keep threat_actors only when the document explicitly names a group, operator, intrusion set, or attributed adversary.
-- Do not convert malware names, tools, or aliases of malware into threat_actors.
+- Do not convert malware names, tools, or aliases of malwares into threat_actors.
 
 Campaign rules:
 - Keep campaigns only when the document explicitly names a campaign or operation.
