@@ -251,46 +251,6 @@ curl -vk https://<public-ip>
 
 ---
 
-## Certificate renewal
-
-These certificates are short-lived, so renewal matters.
-
-Dry-run renewal:
-
-```bash
-sudo certbot renew --dry-run
-```
-
-A common manual renewal flow is:
-
-```bash
-docker compose stop nginx
-sudo certbot renew
-docker compose start nginx
-```
-
-You can automate that later with a timer or scheduled task.
-
----
-
-## Output paths
-
-The project should avoid hardcoded OS-specific paths.
-
-Use `STIX_OUTPUT_DIR` instead of embedding paths directly in code.
-
-Examples:
-
-```env
-STIX_OUTPUT_DIR=/tmp/stix
-```
-
-```env
-STIX_OUTPUT_DIR=C:/stix-output
-```
-
----
-
 ## Troubleshooting
 
 ### Upload returns 404 for `/convert`
