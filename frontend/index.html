@@ -237,17 +237,17 @@
   <main class="shell">
     <section class="hero">
       <h1>STIX Bundle Generator</h1>
-      <p>Upload a threat intelligence report, generate a STIX 2.1 bundle, then download the result.</p>
+      <p>Upload a cyber threat intelligence report and generate a structured STIX 2.1 bundle from extracted observables, entities, and relationships.</p>
     </section>
 
     <section class="content">
       <div class="card">
         <h2>Upload report</h2>
-        <p>Supported formats depend on your backend pipeline. This page sends the selected file to an API endpoint and downloads the generated STIX bundle when processing finishes.</p>
+        <p>Submit a CTI report for analysis. The system will parse the document, extract supported indicators and threat entities, verify the findings, and prepare them for STIX export.</p>
 
         <label class="dropzone" id="dropzone" for="fileInput">
           <strong>Choose a file or drag it here</strong>
-          <span>PDF, DOCX, PPTX, XLSX, HTML, images, or any format your backend supports.</span>
+          <span>PDF, DOCX, PPTX, XLSX, HTML, images, or other formats supported by the document processing pipeline.</span>
         </label>
         <input class="hidden-input" id="fileInput" type="file" />
 
@@ -262,11 +262,11 @@
 
       <div class="card">
         <h2>Generate bundle</h2>
-        <p>By default, this page expects a backend endpoint at <code>/api/convert</code> that accepts <code>multipart/form-data</code> with a single file field named <code>file</code> and returns the generated STIX bundle as a downloadable JSON file.</p>
+        <p>The uploaded report is processed through a multi-step pipeline: extraction, verification, relationship building, and final STIX 2.1 export.</p>
 
         <div class="button-row" style="margin-top:16px;">
           <button id="generateBtn" class="primary" type="button" disabled>Generate STIX bundle</button>
-          <button id="downloadBtn" class="secondary" type="button" disabled>Download last result</button>
+          <button id="downloadBtn" class="secondary" type="button" disabled>Download lastest result</button>
         </div>
 
         <div id="status" class="status info" style="margin-top:16px;">Select a file to begin.</div>
