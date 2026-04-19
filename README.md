@@ -75,50 +75,6 @@ STIX_OUTPUT_DIR=/tmp/stix
 
 ---
 
-## Local development
-
-Install dependencies:
-
-```bash
-uv sync
-```
-
-Run the API locally:
-
-```bash
-uv run uvicorn backend.app:app --host 0.0.0.0 --port 8000
-```
-
-Run the CLI:
-
-```bash
-uv run python -m backend.main convert /path/to/report.pdf --output-name stix_bundle_final.json
-```
-
----
-
-## FastAPI endpoint
-
-### `POST /api/convert`
-
-**Request**
-- `multipart/form-data`
-- file field name: `file`
-
-**Response**
-- generated STIX 2.1 JSON bundle
-
-The frontend uses the same-origin path:
-
-```javascript
-fetch('/api/convert', {
-  method: 'POST',
-  body: formData,
-})
-```
-
----
-
 ## Docker deployment
 
 Build and start the stack:
