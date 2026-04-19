@@ -1,4 +1,10 @@
+from __future__ import annotations
+
+import re
+from typing import Iterable
+
 from backend.models.extractor import StixBundleInput, ExtractedRelationship
+
 
 DELIVERY_VERBS = (
     "spread",
@@ -44,7 +50,7 @@ USE_VERBS = (
     "abused",
 )
 
-ATTRIBUTION_VERBS = (
+ATTRIBUTION_CUES = (
     "attributed to",
     "linked to",
     "associated with",
@@ -75,36 +81,146 @@ GENERIC_RELATIONSHIP_BAD_TEXT = {
     "named as malware being spread and downloaded.",
 }
 
+SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
+WHITESPACE_RE = re.compile(r"\s+")
+MAX_EVIDENCE_LEN = 500
 
-def _norm(value):
+
+def _norm(value: str | None) -> str:
+    if not value:
+        return ""
     return " ".join(value.strip().lower().split())
 
-def _text(*parts: str | None):
+
+def _text(*parts: str | None) -> str:
     return " ".join(part for part in parts if part).strip()
 
-def _contains_name(text, name) -> bool:
-    return _norm(name) in _norm(text)
 
-def _has_any(text, phrases: tuple[str, ...]) -> bool:
+def _entity_list(bundle: StixBundleInput, *field_names: str) -> list:
+    for field_name in field_names:
+        value = getattr(bundle, field_name, None)
+        if value is not None:
+            return list(value or [])
+    return []
+
+
+def _contains_name(text: str, name: str) -> bool:
+    norm_text = _norm(text)
+    norm_name = _norm(name)
+    if not norm_text or not norm_name:
+        return False
+    return norm_name in norm_text
+
+
+def _has_any(text: str, phrases: Iterable[str]) -> bool:
     norm_text = _norm(text)
     return any(phrase in norm_text for phrase in phrases)
 
-def _is_report_centric(text) -> bool:
+
+def _is_report_centric(text: str) -> bool:
     norm_text = _norm(text)
+    if not norm_text:
+        return False
     if norm_text in GENERIC_RELATIONSHIP_BAD_TEXT:
         return True
     return any(phrase in norm_text for phrase in REPORT_CENTRIC_PHRASES)
 
-def _clean_rel_text(text):
+
+def _clean_rel_text(text: str | None) -> str | None:
     if not text:
         return None
-    cleaned = " ".join(text.strip().split())
+
+    cleaned = WHITESPACE_RE.sub(" ", text.strip())
     if not cleaned:
         return None
+
     if _is_report_centric(cleaned):
         return None
-    
-    return str(cleaned)
+
+    if len(cleaned) > MAX_EVIDENCE_LEN:
+        cleaned = cleaned[:MAX_EVIDENCE_LEN].rstrip() + "..."
+
+    return cleaned
+
+
+def _entity_text(item) -> str:
+    return _text(
+        getattr(item, "evidence", None),
+        getattr(item, "context", None),
+    )
+
+
+def _split_document_chunks(document_text: str | None) -> list[str]:
+    if not document_text:
+        return []
+
+    raw = document_text.replace("\r\n", "\n")
+    chunks: list[str] = []
+
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", raw) if p.strip()]
+    for paragraph in paragraphs:
+        chunks.append(paragraph)
+        for sentence in SENTENCE_SPLIT_RE.split(paragraph):
+            sentence = sentence.strip()
+            if sentence:
+                chunks.append(sentence)
+
+    seen = set()
+    deduped: list[str] = []
+    for chunk in chunks:
+        key = _norm(chunk)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        deduped.append(chunk)
+
+    return deduped
+
+
+def _supporting_chunks(document_text: str | None, *entity_items) -> list[str]:
+    chunks = _split_document_chunks(document_text)
+
+    for item in entity_items:
+        text = _entity_text(item)
+        if text:
+            chunks.append(text)
+
+    seen = set()
+    out: list[str] = []
+    for chunk in chunks:
+        key = _norm(chunk)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(chunk)
+
+    return out
+
+
+def _find_best_chunk(
+    chunks: list[str],
+    required_names: list[str],
+    preferred_cues: Iterable[str] | None = None,
+) -> str | None:
+    candidates: list[str] = []
+
+    for chunk in chunks:
+        if _is_report_centric(chunk):
+            continue
+        if not all(_contains_name(chunk, name) for name in required_names):
+            continue
+        candidates.append(chunk)
+
+    if not candidates:
+        return None
+
+    if preferred_cues:
+        preferred = [c for c in candidates if _has_any(c, preferred_cues)]
+        if preferred:
+            candidates = preferred
+
+    candidates.sort(key=lambda c: (len(c), c))
+    return candidates[0]
 
 
 def _add_rel(
@@ -130,25 +246,56 @@ def _add_rel(
     if key in seen:
         return
 
-    evidence = _clean_rel_text(evidence) or ""
-    context = _clean_rel_text(context)
+    cleaned_evidence = _clean_rel_text(evidence)
+    cleaned_context = _clean_rel_text(context)
+
+    if not cleaned_evidence and not cleaned_context:
+        return
 
     seen.add(key)
     rels.append(
         ExtractedRelationship(
-            source_type = source_type,
-            source_name = source_name,
-            relationship_type = relationship_type,
-            target_type = target_type,
-            target_name = target_name,
-            evidence = evidence,
-            context = context,
-            confidence = confidence,
+            source_type=source_type,
+            source_name=source_name,
+            relationship_type=relationship_type,
+            target_type=target_type,
+            target_name=target_name,
+            evidence=cleaned_evidence or "",
+            context=cleaned_context,
+            confidence=confidence,
         )
     )
 
 
-def build_relationships_after_verification(bundle: StixBundleInput) -> StixBundleInput:
+def _infer_delivery_direction(chunk: str, left_name: str, right_name: str) -> tuple[str, str] | None:
+    text = _norm(chunk)
+    left = re.escape(_norm(left_name))
+    right = re.escape(_norm(right_name))
+    verbs = "|".join(re.escape(v) for v in DELIVERY_VERBS)
+
+    directional_patterns = [
+        (left_name, right_name, rf"{left}.{{0,120}}(?:{verbs}).{{0,120}}{right}"),
+        (right_name, left_name, rf"{right}.{{0,120}}(?:{verbs}).{{0,120}}{left}"),
+        (left_name, right_name, rf"{left}.{{0,100}}(?:using|used|leveraged|employed).{{0,40}}(?:to )?(?:{verbs}).{{0,120}}{right}"),
+        (right_name, left_name, rf"{right}.{{0,100}}(?:using|used|leveraged|employed).{{0,40}}(?:to )?(?:{verbs}).{{0,120}}{left}"),
+        (right_name, left_name, rf"{left}.{{0,120}}(?:by|via|through|using|with).{{0,80}}{right}"),
+        (left_name, right_name, rf"{right}.{{0,120}}(?:by|via|through|using|with).{{0,80}}{left}"),
+    ]
+
+    for source_name, target_name, pattern in directional_patterns:
+        if re.search(pattern, text):
+            return source_name, target_name
+
+    if _has_any(text, DELIVERY_VERBS):
+        return None
+
+    return None
+
+
+def build_relationships_after_verification(
+    bundle: StixBundleInput,
+    document_text: str | None = None,
+) -> StixBundleInput:
     existing_relationships = list(getattr(bundle, "relationships", []) or [])
     relationships: list[ExtractedRelationship] = []
     seen: set[tuple[str, str, str, str, str]] = set()
@@ -157,248 +304,168 @@ def build_relationships_after_verification(bundle: StixBundleInput) -> StixBundl
         _add_rel(
             relationships,
             seen,
-            source_type = relationship.source_type,
-            source_name = relationship.source_name,
-            relationship_type = relationship.relationship_type,
-            target_type = relationship.target_type,
-            target_name = relationship.target_name,
-            evidence = relationship.evidence,
-            context = relationship.context,
-            confidence = relationship.confidence,
+            source_type=relationship.source_type,
+            source_name=relationship.source_name,
+            relationship_type=relationship.relationship_type,
+            target_type=relationship.target_type,
+            target_name=relationship.target_name,
+            evidence=relationship.evidence,
+            context=relationship.context,
+            confidence=getattr(relationship, "confidence", "medium"),
         )
 
-    malwares = list(getattr(bundle, "malwares", []) or [])
-    attack_patterns = list(getattr(bundle, "attack_patterns", []) or [])
-    threat_actors = list(getattr(bundle, "threat_actors", []) or [])
-    campaigns = list(getattr(bundle, "campaigns", []) or [])
+    malwares = _entity_list(bundle, "malwares", "malware")
+    attack_patterns = _entity_list(bundle, "attack_patterns")
+    threat_actors = _entity_list(bundle, "threat_actors")
+    campaigns = _entity_list(bundle, "campaigns")
 
     for malware in malwares:
-        malware_text = _text(malware.evidence, malware.context)
+        for attack_pattern in attack_patterns:
+            chunks = _supporting_chunks(document_text, malware, attack_pattern)
+            evidence = _find_best_chunk(
+                chunks,
+                [malware.name, attack_pattern.name],
+                preferred_cues=USE_VERBS,
+            )
 
-        for ap in attack_patterns:
-            ap_text = _text(ap.evidence, ap.context)
-
-            if _is_report_centric(malware_text) and _is_report_centric(ap_text):
+            if not evidence:
                 continue
 
-            if _contains_name(malware_text, ap.name) or _contains_name(ap_text, malware.name):
-                evidence = _clean_rel_text(ap.evidence) or _clean_rel_text(malware.evidence)
-                context = _clean_rel_text(ap.context) or _clean_rel_text(malware.context)
-
-                if not evidence and not context:
-                    continue
-
-                _add_rel(
-                    relationships,
-                    seen,
-                    source_type = "malware",
-                    source_name = malware.name,
-                    relationship_type = "uses",
-                    target_type = "attack-pattern",
-                    target_name = ap.name,
-                    evidence = evidence or "",
-                    context = context,
-                    confidence = "high",
-                )
+            _add_rel(
+                relationships,
+                seen,
+                source_type="malware",
+                source_name=malware.name,
+                relationship_type="uses",
+                target_type="attack-pattern",
+                target_name=attack_pattern.name,
+                evidence=evidence,
+                context=f"{malware.name} is associated with the technique {attack_pattern.name}.",
+                confidence="high" if _has_any(evidence, USE_VERBS) else "medium",
+            )
 
     for i, left in enumerate(malwares):
-        left_text = _text(left.evidence, left.context)
+        for right in malwares[i + 1:]:
+            chunks = _supporting_chunks(document_text, left, right)
+            joint_chunk = _find_best_chunk(
+                chunks,
+                [left.name, right.name],
+                preferred_cues=DELIVERY_VERBS,
+            )
 
-        for right in malwares[i + 1 :]:
-            right_text = _text(right.evidence, right.context)
-
-            left_mentions_right = _contains_name(left_text, right.name)
-            right_mentions_left = _contains_name(right_text, left.name)
-
-            left_delivers_right = left_mentions_right and _has_any(left_text, DELIVERY_VERBS)
-            right_delivers_left = right_mentions_left and _has_any(right_text, DELIVERY_VERBS)
-
-            # A -> delivers -> B
-            if left_delivers_right and not right_delivers_left:
-                evidence = _clean_rel_text(left.evidence)
-                context = _clean_rel_text(left.context)
-                if evidence or context:
+            if joint_chunk:
+                direction = _infer_delivery_direction(joint_chunk, left.name, right.name)
+                if direction:
+                    source_name, target_name = direction
                     _add_rel(
                         relationships,
                         seen,
-                        source_type = "malware",
-                        source_name = left.name,
-                        relationship_type = "delivers",
-                        target_type = "malware",
-                        target_name = right.name,
-                        evidence = evidence or "",
-                        context = context,
-                        confidence = "high",
+                        source_type="malware",
+                        source_name=source_name,
+                        relationship_type="delivers",
+                        target_type="malware",
+                        target_name=target_name,
+                        evidence=joint_chunk,
+                        context=f"{source_name} is used to deliver or execute {target_name}.",
+                        confidence="high",
                     )
-
-                continue
-
-            # B -> delivers -> A
-            if right_delivers_left and not left_delivers_right:
-                evidence = _clean_rel_text(right.evidence)
-                context = _clean_rel_text(right.context)
-                if evidence or context:
-                    _add_rel(
-                        relationships,
-                        seen,
-                        source_type = "malware",
-                        source_name = right.name,
-                        relationship_type = "delivers",
-                        target_type = "malware",
-                        target_name = left.name,
-                        evidence = evidence or "",
-                        context = context,
-                        confidence = "high",
-                    )
-
-                continue
-
-            # if both directions look like delivery, prefer the stronger side.
-            if left_delivers_right and right_delivers_left:
-                left_score = sum(verb in _norm(left_text) for verb in DELIVERY_VERBS)
-                right_score = sum(verb in _norm(right_text) for verb in DELIVERY_VERBS)
-
-                if left_score >= right_score:
-                    evidence = _clean_rel_text(left.evidence)
-                    context = _clean_rel_text(left.context)
-
-                    source_name, target_name = left.name, right.name
-                else:
-                    evidence = _clean_rel_text(right.evidence)
-                    context = _clean_rel_text(right.context)
-
-                    source_name, target_name = right.name, left.name
-
-                if evidence or context:
-                    _add_rel(
-                        relationships,
-                        seen,
-                        source_type = "malware",
-                        source_name = source_name,
-                        relationship_type = "delivers",
-                        target_type = "malware",
-                        target_name = target_name,
-                        evidence = evidence or "",
-                        context = context,
-                        confidence = "medium",
-                    )
-
-                continue
-
-            # only create related-to if there is an explicit
-            combined_text = _text(left.evidence, left.context, right.evidence, right.context)
-            if _is_report_centric(combined_text):
-                continue
-
-            if (left_mentions_right or right_mentions_left) and _has_any(combined_text, EXPLICIT_RELATED_CUES):
-                left_name = _norm(left.name)
-                right_name = _norm(right.name)
-
-                if left_name <= right_name:
-                    source_name, target_name = left.name, right.name
-                    evidence = _clean_rel_text(left.evidence) or _clean_rel_text(right.evidence)
-                    context = _clean_rel_text(left.context) or _clean_rel_text(right.context)
-                else:
-                    source_name, target_name = right.name, left.name
-                    evidence = _clean_rel_text(right.evidence) or _clean_rel_text(left.evidence)
-                    context = _clean_rel_text(right.context) or _clean_rel_text(left.context)
-
-                if evidence or context:
-                    _add_rel(
-                        relationships,
-                        seen,
-                        source_type = "malware",
-                        source_name = source_name,
-                        relationship_type = "related-to",
-                        target_type = "malware",
-                        target_name = target_name,
-                        evidence = evidence or "",
-                        context = context,
-                        confidence = "medium",
-                    )
-
-    for threat_actor in threat_actors:
-        threat_actor_text = _text(threat_actor.evidence, threat_actor.context)
-
-        if _is_report_centric(threat_actor_text):
-            continue
-
-        for malware in malwares:
-            if _contains_name(threat_actor_text, malware.name):
-                evidence = _clean_rel_text(threat_actor.evidence)
-                context = _clean_rel_text(threat_actor.context)
-
-                if not evidence and not context:
                     continue
+
+            related_chunk = _find_best_chunk(
+                chunks,
+                [left.name, right.name],
+                preferred_cues=EXPLICIT_RELATED_CUES,
+            )
+            if related_chunk and _has_any(related_chunk, EXPLICIT_RELATED_CUES):
+                if _norm(left.name) <= _norm(right.name):
+                    source_name, target_name = left.name, right.name
+                else:
+                    source_name, target_name = right.name, left.name
 
                 _add_rel(
                     relationships,
                     seen,
-                    source_type = "threat-actor",
-                    source_name = threat_actor.name,
-                    relationship_type = "uses",
-                    target_type = "malware",
-                    target_name = malware.name,
-                    evidence = evidence or "",
-                    context = context,
-                    confidence = "medium",
+                    source_type="malware",
+                    source_name=source_name,
+                    relationship_type="related-to",
+                    target_type="malware",
+                    target_name=target_name,
+                    evidence=related_chunk,
+                    context=f"{source_name} and {target_name} are explicitly linked in the source material.",
+                    confidence="medium",
                 )
 
     for threat_actor in threat_actors:
-        threat_actor_text = _text(threat_actor.evidence, threat_actor.context)
+        for malware in malwares:
+            chunks = _supporting_chunks(document_text, threat_actor, malware)
+            evidence = _find_best_chunk(
+                chunks,
+                [threat_actor.name, malware.name],
+                preferred_cues=USE_VERBS,
+            )
+            if not evidence:
+                continue
 
-        if _is_report_centric(threat_actor_text):
-            continue
+            _add_rel(
+                relationships,
+                seen,
+                source_type="threat-actor",
+                source_name=threat_actor.name,
+                relationship_type="uses",
+                target_type="malware",
+                target_name=malware.name,
+                evidence=evidence,
+                context=f"{threat_actor.name} is associated with the use of {malware.name}.",
+                confidence="high" if _has_any(evidence, USE_VERBS) else "medium",
+            )
 
+    for threat_actor in threat_actors:
         for campaign in campaigns:
-            if _contains_name(threat_actor_text, campaign.name):
-                evidence = _clean_rel_text(threat_actor.evidence)
-                context = _clean_rel_text(threat_actor.context)
+            chunks = _supporting_chunks(document_text, threat_actor, campaign)
+            evidence = _find_best_chunk(
+                chunks,
+                [threat_actor.name, campaign.name],
+                preferred_cues=ATTRIBUTION_CUES,
+            )
+            if not evidence:
+                continue
 
-                if not evidence and not context:
-                    continue
+            _add_rel(
+                relationships,
+                seen,
+                source_type="threat-actor",
+                source_name=threat_actor.name,
+                relationship_type="attributed-to",
+                target_type="campaign",
+                target_name=campaign.name,
+                evidence=evidence,
+                context=f"{threat_actor.name} is explicitly linked to {campaign.name}.",
+                confidence="high" if _has_any(evidence, ATTRIBUTION_CUES) else "medium",
+            )
 
-                _add_rel(
-                    relationships,
-                    seen,
-                    source_type = "threat-actor",
-                    source_name = threat_actor.name,
-                    relationship_type = "attributed-to",
-                    target_type = "campaign",
-                    target_name = campaign.name,
-                    evidence = evidence or "",
-                    context = context,
-                    confidence = "medium",
-                )
-
-    # campaign -> uses -> malware
     for campaign in campaigns:
-        campaign_text = _text(campaign.evidence, campaign.context)
-
-        if _is_report_centric(campaign_text):
-            continue
-
         for malware in malwares:
-            if _contains_name(campaign_text, malware.name):
-                evidence = _clean_rel_text(campaign.evidence)
-                context = _clean_rel_text(campaign.context)
+            chunks = _supporting_chunks(document_text, campaign, malware)
+            evidence = _find_best_chunk(
+                chunks,
+                [campaign.name, malware.name],
+                preferred_cues=USE_VERBS,
+            )
+            if not evidence:
+                continue
 
-                if not evidence and not context:
-                    continue
-
-                _add_rel(
-                    relationships,
-                    seen,
-                    source_type = "campaign",
-                    source_name = campaign.name,
-                    relationship_type = "uses",
-                    target_type = "malware",
-                    target_name = malware.name,
-                    evidence = evidence or "",
-                    context = context,
-                    confidence = "medium",
-                )
+            _add_rel(
+                relationships,
+                seen,
+                source_type="campaign",
+                source_name=campaign.name,
+                relationship_type="uses",
+                target_type="malware",
+                target_name=malware.name,
+                evidence=evidence,
+                context=f"{campaign.name} is associated with the use of {malware.name}.",
+                confidence="high" if _has_any(evidence, USE_VERBS) else "medium",
+            )
 
     bundle.relationships = relationships
-    
     return bundle

@@ -143,7 +143,7 @@ Field-by-field extraction rules:
   - deepfake-related crimes
   - cybercrime strategy
 - Attack-pattern descriptions must be technique-focused and reusable across reports.
-- Do not mention specific malware, threat actors, or campaigns in the attack-pattern object.
+- Do not mention specific malwares, threat actors, or campaigns in the attack-pattern object.
 - If the only available wording is malware-specific, rewrite it into a generic technique-focused description.
 - For each item include:
   - `name`
@@ -153,7 +153,7 @@ Field-by-field extraction rules:
 6. `threat_actors`
 - Extract only explicitly named groups, operators, intrusion sets, or attributed adversaries.
 - A threat actor is the attacker or group behind the activity.
-- Do not put malware, tools, or aliases of malware here.
+- Do not put malwares, tools, or aliases of malwares here.
 - For each item include:
   - `name`
   - `evidence`

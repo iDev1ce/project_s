@@ -3,6 +3,7 @@ from pathlib import Path
 from backend.agents.stix_agent import extractor_agent
 from backend.agents.verifier_agent import verifier_agent
 from backend.models.extractor import StixBundleInput
+from backend.tools.document import load_document
 from backend.tools.relationship_builder import build_relationships_after_verification
 from backend.tools.stix_exporter import export_verified_bundle_to_stix
 
@@ -35,7 +36,8 @@ Include `relationships` as an empty list. Relationship building happens in a lat
     if not isinstance(verified_bundle, StixBundleInput):
         raise TypeError(f"Verifier returned {type(verified_bundle)}, expected StixBundleInput")
 
-    verified_bundle = build_relationships_after_verification(verified_bundle)
+    document_text = load_document(input_path)
+    verified_bundle = build_relationships_after_verification(verified_bundle, document_text)
 
     output_path = export_verified_bundle_to_stix(
         verified_bundle=verified_bundle,
