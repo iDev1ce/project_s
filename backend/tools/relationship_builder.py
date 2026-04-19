@@ -167,7 +167,7 @@ def build_relationships_after_verification(bundle: StixBundleInput) -> StixBundl
             confidence = relationship.confidence,
         )
 
-    malwares = list(getattr(bundle, "malware", []) or [])
+    malwares = list(getattr(bundle, "malwares", []) or [])
     attack_patterns = list(getattr(bundle, "attack_patterns", []) or [])
     threat_actors = list(getattr(bundle, "threat_actors", []) or [])
     campaigns = list(getattr(bundle, "campaigns", []) or [])
