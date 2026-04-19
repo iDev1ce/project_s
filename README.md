@@ -15,6 +15,13 @@ The web app lets a user upload a report and download the generated STIX bundle.
 
 ---
 
+## Demo
+
+![STIX Bundle Generator Demo](assets/demo.gif)
+
+*A quick demonstration of uploading a cyber threat report and generating a valid STIX 2.1 bundle.*
+
+---
 ## Features
 
 - Extracts:
